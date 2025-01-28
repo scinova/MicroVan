@@ -46,6 +46,7 @@ public:
 			unsigned int hueSteps = 20,
 			unsigned long fadeDuration = 1000);
 	void toggle();
+	void toggleMode();
 	void increaseHue();
 	void decreaseHue();
 	void increaseBrightness();

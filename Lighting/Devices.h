@@ -14,7 +14,7 @@ private:
 	unsigned long debounceDuration;
 
 public:
-	Switch(Callback onPress, Callback onRelease, unsigned long debounceDuration = 50);
+	Switch(Callback onPress, Callback onRelease, unsigned long debounceDuration = 10);
 	void debounce(bool val);
 };
 
@@ -24,11 +24,12 @@ private:
 	Callback leftHandler;
 	unsigned long clkTimestamp;
 	bool clkState;
+	bool dtState;
 	unsigned long debounceDuration;
 
 public:
-	Encoder(Callback onLeft, Callback onRight, unsigned long debounceDuration = 50);
-	void debounce(bool clk, bool dir);
+	Encoder(Callback onLeft, Callback onRight, unsigned long debounceDuration = 10);
+	void debounce(bool clk, bool dt);
 };
 
 #endif // DEVICES_H

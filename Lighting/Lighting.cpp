@@ -16,7 +16,7 @@
 #define NUMPIXELS 1
 
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
-Light light(0.9, 20, 20, 1000);
+Light light(0.9, 20, 20, 20, 1000);
 
 void handleLevelPress() {
 	light.toggle();
@@ -35,16 +35,16 @@ void handleModePress() {
 }
 
 void handleModeLeft() {
-	if (light.mode == WHITE)
+	if (light.mode == Light::WHITE)
 		light.increaseTemperature();
-	if (light.mode == COLOR)
+	if (light.mode == Light::COLOR)
 		light.increaseHue();
 }
 
 void handleModeRight() {
-	if (light.mode == WHITE)
+	if (light.mode == Light::WHITE)
 		light.decreaseTemperature();
-	if (light.mode == COLOR)
+	if (light.mode == Light::COLOR)
 		light.decreaseHue();
 }
 
@@ -56,7 +56,7 @@ Switch modeSwitch(&handleModePress, NULL);
 
 void driveNeoPixelLed(Adafruit_NeoPixel &pixels, Light &light) {
 	for (int i = 0; i < NUMPIXELS; i++) {
-		pixels.setPixelColor(i, light.rgb.r * 255, light.rgb.g * 255, light.rgb.b * 255);
+		pixels.setPixelColor(i, light.rgb().r * 255, light.rgb().g * 255, light.rgb().b * 255);
 	}
 	pixels.show();
 }

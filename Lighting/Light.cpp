@@ -42,7 +42,6 @@ void Light::toggle() {
 	}
 	fadeTimestamp = millis();
 	fadeStart = fade;
-	loop();
 }
 
 void Light::toggleMode() {
@@ -53,16 +52,14 @@ void Light::toggleMode() {
 }
 
 void Light::increaseBrightness() {
-	if (state == OFF) {
-		brightness = 0;
+	if (state == OFF)
 		state = ON;
-	}
 	brightness = min(brightness + (1.0 / brightnessSteps), 1.0);
 	update();
 }
 
 void Light::decreaseBrightness() {
-	brightness = std::max(brightness - (1.0 / brightnessSteps), 0.0);
+	brightness = max(brightness - (1.0 / brightnessSteps), 0.0);
 	if (brightness == 0)
 		state = OFF;
 	update();
@@ -93,24 +90,25 @@ void Light::decreaseHue() {
 }
 
 void Light::logg() {
+	Serial.print(" state: ");
 	Serial.print(state);
-	Serial.print(" ");
+	Serial.print(" fade: ");
 	Serial.print(fade);
-	Serial.print(" ");
+	Serial.print(" bright: ");
 	Serial.print(brightness);
-	Serial.print(" ");
+	Serial.print(" temp: ");
 	Serial.print(temperature);
+	Serial.print(" rgb: ");
+	Serial.print(rgb().r);
 	Serial.print(" ");
-	Serial.print(rgb.r);
+	Serial.print(rgb().g);
 	Serial.print(" ");
-	Serial.print(rgb.g);
-	Serial.print(" ");
-	Serial.print(rgb.b);
+	Serial.print(rgb().b);
 	Serial.println(" ");
 }
 
 RGB Light::whiteModeRgb() {
-	double t = (temperature - WARM_WHITE) / (COOL_WHITE - WARM_WHITE);
+	RGB color;
 	if (temperature <= NEUTRAL_WHITE) {
 		color.r = 1.0; 
 		color.g = 0.5 + (0.5 * (temperature - WARM_WHITE) / (NEUTRAL_WHITE - WARM_WHITE));
@@ -127,55 +125,41 @@ RGB Light::whiteModeRgb() {
 		color.g = color.g < thr ? thr : color.g;
 		color.b = color.b < thr ? thr : color.b;
 	}
-	double f = (state == FADEIN || state == FADEOUT) ? fade : 1;
-	color.r *= brightness * f;
-	color.g *= brightness * f;
-	color.b *= brightness * f;
+	color.r *= brightness * fade;
+	color.g *= brightness * fade;
+	color.b *= brightness * fade;
 	return color;
 }
 
 RGB Light::colorModeRgb() {
-	// Convert hue from [0.0, 1.0] to [0, 360]
-	hue *= 360.0;
-	double c = level; // Chroma
-	double x = c * (1 - fabs(fmod(hue / 60.0, 2) - 1));
-	double m = 0; // No offset since we want full brightness
+	double h = hue * 360.0;
+	double s = 1.0;
+	double v = brightness * fade;
+
+	double c = v * s;
+	double x = c * (1 - fabs(fmod(h / 60.0, 2) - 1));
+	double m = v - c;
+
 	RGB color;
-	// Initialize RGB values based on hue
-	if (hue >= 0 && hue < 60) {
-		color.r = (c + m) * 255;
-		color.g = (x + m) * 255;
-		color.b = m * 255;
-	} else if (hue >= 60 && hue < 120) {
-		color.r = (x + m) * 255;
-		color.g = (c + m) * 255;
-		color.b = m * 255;
-	} else if (hue >= 120 && hue < 180) {
-		color.r = m * 255;
-		color.g = (c + m) * 255;
-		color.b = (x + m) * 255;
-	} else if (hue >= 180 && hue < 240) {
-		color.r = m * 255;
-		color.g = (x + m) * 255;
-		color.b = (c + m) * 255;
-	} else if (hue >= 240 && hue < 300) {
-		color.r = (x + m) * 255;
-		color.g = m * 255;
-		color.b = (c + m) * 255;
+	if (h >= 0 && h < 60) {
+		color.r = c; color.g = x; color.b = 0;
+	} else if (h < 120) {
+		color.r = x; color.g = c; color.b = 0;
+	} else if (h < 180) {
+		color.r = 0; color.g = c; color.b = x;
+	} else if (h < 240) {
+		color.r = 0; color.g = x; color.b = c;
+	} else if (h < 300) {
+		color.r = x; color.g = 0; color.b = c;
 	} else {
-		color.r = (c + m) * 255;
-		color.g = m * 255;
-		color.b = (x + m) * 255;
+		color.r = c; color.g = 0; color.b = x;
 	}
-	// Calculate perceived brightness (luminance)
-	double luminance = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
-	// Adjust RGB to achieve consistent brightness
-	double target_luminance = 128; // Target brightness (can be adjusted)
-	double adjustment_factor = target_luminance / (luminance + 1e-6); // Prevent division by zero
-	// Adjust RGB values
-	color.r = fmin(fmax(color.r * adjustment_factor, 0), 255);
-	color.g = fmin(fmax(color.g * adjustment_factor, 0), 255);
-	color.b = fmin(fmax(color.b * adjustment_factor, 0), 255);
+	color.r += m;
+	color.g += m;
+	color.b += m;
+	color.r = fmax(fmin(color.r, 1.0), 0.0);
+	color.g = fmax(fmin(color.g, 1.0), 0.0);
+	color.b = fmax(fmin(color.b, 1.0), 0.0);
 	return color;
 }
 
